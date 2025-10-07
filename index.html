@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent P Mission</title>
+<style>
+:root{
+  --teal:#0d9488;--teal-dark:#0f766e;--orange:#fb923c;--orange-dark:#f97316;
+  --yellow:#fde68a;--green:#22c55e;--blue:#3b82f6;--ink:#0f172a;
+  --pf-teal:#12c6c1;--pf-orange:#ff8c1a;--pf-yellow:#ffe36e;--pf-blue:#00a2ff;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  min-height:100vh;background:linear-gradient(135deg,#2dd4bf,#06b6d4,#3b82f6);
+  display:flex;align-items:center;justify-content:center;padding:16px;color:var(--ink);
+}
+.container{max-width:900px;width:100%;}
+.card{background:#fff;border-radius:24px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,.15);border:4px solid transparent;}
+.card.orange{background:var(--orange);border-color:#0ea5a4;}
+.card.white{background:#fff;border-color:var(--orange);}
+.center{text-align:center;}
+.title{font-size:40px;font-weight:800;color:#115e59;margin:12px 0;}
+/* Speech bubble intro */
+.subtitle-bubble{
+  position:relative;display:inline-block;background:var(--yellow);
+  border:3px solid #facc15;border-radius:18px;padding:14px 20px;
+  font-size:18px;color:#134e4a;text-align:left;margin:0 auto 24px;line-height:1.4;max-width:600px;
+}
+.btn{
+  background:var(--teal);color:#fff;font-weight:800;border:0;padding:16px 28px;border-radius:999px;font-size:18px;
+  box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform .15s,background .15s,opacity .3s ease;
+}
+.btn:hover{transform:scale(1.03);background:var(--teal-dark);}
+.btn.choice{display:block;width:100%;border-radius:14px;margin:10px 0;background:var(--orange);border:2px solid var(--orange-dark);font-weight:900;}
+.btn.secondary{background:#0ea5a4;}
+.btn.disabled{opacity:.5;pointer-events:none;}
+/* Doof text box — square (no tail) */
+.bubble{background:#fef9c3;border:4px solid #f59e0b;padding:18px;border-radius:20px;text-align:left;position:relative;}
+.bubble:before{display:none !important;}
+.msg{font-size:18px;color:#1f2937;margin:12px 0;}
+.panel{background:#f0fdfa;border:2px solid #14b8a6;padding:14px;border-radius:12px;}
+.error{color:#dc2626;font-weight:800;margin-top:10px;animation:pulse 1s infinite;}
+@keyframes pulse{50%{opacity:.5}}
+/* Typewriter */
+.typed{position:relative;display:inline-block;}
+.typed::after{content:"";position:absolute;right:-2px;top:0;height:1.2em;width:2px;background:#1f2937;animation:caret 0.9s steps(1,end) infinite;}
+@keyframes caret{50%{opacity:0}}
+.highlight{color:#2563eb;font-weight:700;}
+.hidden{display:none;}
+.img-round{width:192px;height:192px;object-fit:contain;display:block;margin:0 auto 12px;}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
+/* Step transitions */
+.step{opacity:0;transform:translateY(10px);transition:opacity .35s ease, transform .35s ease;}
+.step.show{opacity:1;transform:translateY(0);}
+
+/* ========= Cipher Wheel (namespaced) ========= */
+.cw-wrap{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+@media (max-width:860px){ .cw-wrap{grid-template-columns:1fr} }
+.cw-wheelBox{display:flex;align-items:center;justify-content:center}
+.cw-controls{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-top:10px}
+.cw-controls .row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+.cw-controls button{border:0;padding:8px 12px;border-radius:10px;font-weight:800;cursor:pointer;background:#0ea5a4;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)}
+.cw-controls input[type="range"]{width:100%}
+.cw-label{font-size:12px;color:#475569;font-weight:800}
+.cw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;font-family:ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:520px){ .cw-grid{grid-template-columns:1fr} }
+.cw-text{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:16px;font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff}
+.cw-rotatable{transform-box:view-box;transform-origin:160px 160px;transition:transform 220ms cubic-bezier(.22,.9,.2,1);will-change:transform}
+
+/* ====== Puzzle modal ====== */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50;
+  opacity:0;transition:opacity .3s ease;
+}
+.modal-backdrop.show{display:flex;opacity:1;}
+.modal{background:#fff;border-radius:18px;border:3px solid #0ea5a4;box-shadow:0 20px 40px rgba(0,0,0,.3);width:min(560px,92vw);padding:20px;}
+.modal h3{margin:0 0 10px;font-size:22px;color:#0f766e}
+.modal .hint{font-size:14px;color:#475569;margin:6px 0 14px}
+.inputline{display:flex;gap:8px;align-items:center;margin-top:8px}
+.inputline input{flex:1;border:2px solid #94d0c9;border-radius:12px;padding:10px 12px;font-size:18px}
+.inline-error{color:#b91c1c;font-weight:800;margin-top:8px;min-height:1.2em}
+
+/* ===== Final screen ===== */
+.final-wrap{position:relative;overflow:hidden}
+.final-img{max-width:100%;height:auto;border-radius:16px;display:block;margin:0 auto}
+.final-title{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+  background:#ffffffd9;padding:10px 16px;border-radius:12px;font-weight:900;font-size:28px;color:#0b6c7a;}
+.pf-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.pf-piece{position:absolute;width:10px;height:10px;opacity:.9;animation:pf-fall 2.6s linear infinite;transform:rotate(0deg)}
+.pf-circle{border-radius:50%}
+.pf-diamond{transform:rotate(45deg)}
+@keyframes pf-fall{
+  0%{transform:translateY(-20px) rotate(0deg)}
+  100%{transform:translateY(120vh) rotate(360deg)}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- START -->
+  <div id="screen-start" class="card orange center step show">
+    <div class="subtitle-bubble"><span id="start-typed" class="typed" data-full="Agent P, we've intercepted a transmission from Dr. Doofenshmirtz. He's up to something at USC, and we need YOUR help!"></span></div>
+    <img class="img-round" src="https://static.wikia.nocookie.net/phineasandferb/images/d/de/Profile_-_Francis_Monogram.PNG/revision/latest?cb=20200401183135" alt="Major Monogram" />
+    <button id="btn-start" class="btn">ACCEPT MISSION</button>
+  </div>
+
+  <!-- MISSION: Doof script -->
+  <div id="screen-mission" class="card white center step hidden">
+    <div class="center" style="margin-bottom:16px;">
+      <img src="https://media.tenor.com/x-_f5zERPJcAAAAM/heinz-doofenshmirtz-content.gif"
+           alt="Dr. Doofenshmirtz dancing"
+           style="width:200px;height:auto;margin:0 auto 16px;border-radius:12px;">
+    </div>
+    <div class="bubble" id="bubble"></div>
+
+    <!-- After script: Begin decoding button -->
+    <div id="begin-decode-wrap" class="hidden" style="margin-top:16px;">
+      <button id="btn-begin-decode" class="btn secondary" style="opacity:0;">Begin decoding message</button>
+    </div>
+  </div>
+
+  <!-- DECODER -->
+  <div id="screen-decoder" class="card white center step hidden">
+    <div class="panel" style="margin-bottom:12px;">
+      <p style="margin:0;font-weight:800;color:#115e59;">🔍 AGENT P! Use the cipher wheel to decode Doof's message.</p>
+      <p class="mono" style="margin:6px 0 0;color:#166534;">Hint: the correct wheel setting is the number you just solved.</p>
+    </div>
+
+    <div class="cw-wrap">
+      <!-- LEFT: Wheel + controls -->
+      <div>
+        <div class="cw-wheelBox">
+          <svg id="cw-svg" width="300" height="300" viewBox="0 0 320 320" role="img" aria-label="Caesar wheels">
+            <defs>
+              <filter id="cw-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".25"/>
+              </filter>
+            </defs>
+
+            <circle cx="160" cy="160" r="154" fill="#e2e8f0"></circle>
+
+            <g id="cw-outerRing" filter="url(#cw-shadow)">
+              <circle cx="160" cy="160" r="150" fill="#1f2937"></circle>
+              <circle cx="160" cy="160" r="140" fill="#334155"></circle>
+              <g id="cw-outerTicks"></g>
+            </g>
+
+            <g id="cw-outerLetters"></g>
+
+            <g id="cw-innerRing" class="cw-rotatable" filter="url(#cw-shadow)">
+              <circle cx="160" cy="160" r="110" fill="#0f172a"></circle>
+              <circle cx="160" cy="160" r="100" fill="#111827"></circle>
+            </g>
+
+            <g id="cw-innerLetters" class="cw-rotatable"></g>
+
+            <circle cx="160" cy="160" r="8" fill="#06b6d4"></circle>
+          </svg>
+        </div>
+
+        <div class="cw-controls">
+          <div class="row">
+            <button id="cw-innerMinus" type="button">◀ −1</button>
+            <div class="cw-label">Inner Wheel Steps: <span id="cw-innerSteps" style="font-weight:800">0</span></div>
+            <button id="cw-innerPlus" type="button">+1 ▶</button>
+          </div>
+          <input id="cw-innerSlider" type="range" min="0" max="25" step="1" value="0" />
+          <div class="cw-label" style="margin-top:8px;">Effective Shift (outer − inner): <strong><span id="cw-shiftVal">0</span></strong></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Mapping + decode + exit -->
+      <div>
+        <div class="panel" style="margin-bottom:12px;">
+          <div class="cw-label">Mapping (A→C when effective shift = 2):</div>
+          <div id="cw-mapGrid" class="cw-grid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="cw-label">Ciphertext</div>
+          <textarea id="cw-cipherIn" class="cw-text" rows="3" placeholder=""></textarea>
+          <div class="cw-label" style="margin-top:10px;">Plaintext (decoded with effective shift)</div>
+          <textarea id="cw-plainOut" class="cw-text" rows="3" readonly></textarea>
+
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+            <button id="btn-exit-decoder" class="btn disabled">Exit decoder</button>
+          </div>
+          <div id="solve-hint" class="cw-label" style="margin-top:6px;">Set wheel to <strong>14</strong> and decode to <strong>“Doheny Library”</strong> to continue.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHOICES -->
+  <div id="screen-choices" class="card white center step hidden">
+    <div class="panel" style="margin-bottom:12px;">
+      <p class="mono" style="font-weight:800;font-size:18px;margin:0 0 10px;">Select the Bruin-inator's location:</p>
+      <div>
+        <button class="btn choice" data-loc="Doheny Library">Doheny Library</button>
+        <button class="btn choice" data-loc="Tommy Trojan">Tommy Trojan</button>
+        <button class="btn choice" data-loc="Bovard Auditorium">Bovard Auditorium</button>
+        <button class="btn choice" data-loc="Leavey Library">Leavey Library</button>
+      </div>
+      <div id="wrong" class="error hidden">❌ Not quite! Keep decoding, Agent P!</div>
+    </div>
+  </div>
+
+  <!-- FINAL (image + PF confetti) -->
+  <div id="screen-final" class="card white center step hidden final-wrap">
+    <img class="final-img" src="https://ih1.redbubble.net/image.5129630128.3587/flat,750x,075,f-pad,750x1000,f8f8f8.jpg" alt="Final success"/>
+    <div class="final-title">You successfully saved USC</div>
+    <div id="pf-confetti" class="pf-confetti"></div>
+  </div>
+</div>
+
+<!-- Puzzle modal -->
+<div id="puzzle-modal" class="modal-backdrop">
+  <div class="modal">
+    <h3>Hint</h3>
+    <div class="hint">How many days did it take to build the Bruin-inator? <em>(Think “two weeks”!)</em></div>
+    <div class="inputline">
+      <input id="puzzle-answer" type="number" placeholder="Enter your answer…" />
+      <button id="puzzle-submit" class="btn">Submit</button>
+    </div>
+    <div id="puzzle-error" class="inline-error"></div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ========= Constants (slower type speed) ========= */
+  const TYPE_SPEED = 55;    // was ~22 → slower
+  const TYPE_PAUSE = 450;   // small pause between lines
+  const CIPHER_SPEED = 95;  // slower encrypted blip-in
+
+  /* ========= Step transitions ========= */
+  const stepIds = ['screen-start','screen-mission','screen-decoder','screen-choices','screen-final'];
+  function showOnly(id){
+    for (const sid of stepIds){
+      const el = document.getElementById(sid);
+      if(!el) continue;
+      if(sid === id){
+        el.classList.remove('hidden');
+        requestAnimationFrame(()=>el.classList.add('show'));
+      }else{
+        el.classList.remove('show');
+        setTimeout(()=>el.classList.add('hidden'), 300);
+      }
+    }
+  }
+
+  /* ========= Narrative ========= */
+  const messageLines = [
+    'Ah, Perry the Platypus! By the time you find this message, it will be too late! Behold, my latest invention: THE BRUIN-INATOR!',
+    'After two weeks of meticulous work it is finally done.',
+    "With the flip of a switch, I will transform every single Trojan into a UCLA student! They'll be saying 'Go Bruins!' and wearing blue and gold by sunset! The entire USC campus will be MINE! Well, UCLA's technically, but you get the idea!",
+    'My Bruin-inator is hidden somewhere on campus...',
+    "but you'll never decode where! I've encrypted the location using my EVIL CIPHER! Mwahahaha!"
+  ];
+  const correctLocation = 'Doheny Library';
+
+  // Elements
+  const btnStart = document.getElementById('btn-start');
+  const bubble = document.getElementById('bubble');
+  const beginWrap = document.getElementById('begin-decode-wrap');
+  const btnBeginDecode = document.getElementById('btn-begin-decode');
+  const wrong = document.getElementById('wrong');
+
+  // Typewriter (generic)
+  async function typeSpansSequentially(container, spans, speed){
+    const typeSpan = (span) => new Promise((resolve) => {
+      const full = span.getAttribute('data-full') || '';
+      let i = 0;
+      (function tick(){
+        span.textContent = full.slice(0, i++);
+        if(i <= full.length) setTimeout(tick, speed); else resolve();
+      })();
+    });
+    for (const s of spans) await typeSpan(s);
+  }
+
+  async function typeLine(text, parent, { speed = TYPE_SPEED, pauseEnd = TYPE_PAUSE, highlightPhrase = 'THE BRUIN-INATOR', openQuote = false } = {}) {
+    const p = document.createElement('p');
+    p.className = 'msg';
+    if (text.includes(highlightPhrase)) {
+      const [before, after] = text.split(highlightPhrase);
+      p.innerHTML =
+        (openQuote ? '<strong>"</strong>' : '') +
+        `<span class="typed" data-full="${before}"></span>` +
+        `<span class="typed highlight" data-full="${highlightPhrase}"></span>` +
+        `<span class="typed" data-full="${after}"></span>`;
+    } else {
+      p.innerHTML =
+        (openQuote ? '<strong>"</strong>' : '') +
+        `<span class="typed" data-full="${text}"></span>`;
+    }
+    parent.appendChild(p);
+    await typeSpansSequentially(p, p.querySelectorAll('.typed'), speed);
+    p.querySelectorAll('.typed').forEach(s=>s.classList.remove('typed'));
+    await new Promise(r=>setTimeout(r, pauseEnd));
+  }
+
+  // Start screen subtitle typewriter
+  (function animateStartSubtitle(){
+    const startSpan = document.getElementById('start-typed');
+    if (startSpan){
+      typeSpansSequentially(startSpan.parentElement, [startSpan], TYPE_SPEED);
+    }
+  })();
+
+  async function revealTranscript() {
+    bubble.innerHTML = '';
+    wrong.classList.add('hidden');
+    for (let i = 0; i < messageLines.length; i++) {
+      await typeLine(messageLines[i], bubble, { openQuote: i === 0 });
+    }
+    const box = document.createElement('div');
+    box.style.cssText = "background:#fee2e2;border:2px solid #fca5a5;padding:12px;border-radius:8px;margin:8px 0;";
+    box.innerHTML = '<p style="margin:0 0 6px;font-weight:800;color:#7f1d1d;">ENCRYPTED MESSAGE:</p><p class="mono" style="font-size:26px;text-align:center;color:#7f1d1d;font-weight:900;letter-spacing:.08em;margin:0;"><span class="typed" data-full="Patqzk Xundmdk"></span></p>';
+    bubble.appendChild(box);
+    const cipherSpan = box.querySelector('.typed');
+    await typeSpansSequentially(box, [cipherSpan], CIPHER_SPEED);
+    cipherSpan.classList.remove('typed');
+
+    await typeLine('Good luck stopping me, Perry the Platypus!', bubble, { speed: TYPE_SPEED, pauseEnd: 300 });
+    const sig = document.createElement('p');
+    sig.className = 'msg';
+    sig.style.textAlign = 'right';
+    sig.style.fontStyle = 'italic';
+    sig.innerHTML = '-Dr. Heinz Doofenshmirtz<strong>"</strong>';
+    bubble.appendChild(sig);
+
+    // Fade in Begin Decode
+    beginWrap.classList.remove('hidden');
+    requestAnimationFrame(()=>{ btnBeginDecode.style.opacity = 1; });
+  }
+
+  // Start → Mission script
+  btnStart.addEventListener('click', async (e) => {
+    e.preventDefault();
+    showOnly('screen-mission');
+    await revealTranscript();
+  });
+
+  /* ========= Puzzle Modal ========= */
+  const modal = document.getElementById('puzzle-modal');
+  const puzzleInput = document.getElementById('puzzle-answer');
+  const puzzleSubmit = document.getElementById('puzzle-submit');
+  const puzzleError = document.getElementById('puzzle-error');
+
+  btnBeginDecode.addEventListener('click', () => {
+    modal.classList.add('show');
+    puzzleInput.focus();
+  });
+
+  function closeModal(){ modal.classList.remove('show'); }
+
+  function checkPuzzle(){
+    const val = parseInt(puzzleInput.value,10);
+    if (val === 14){
+      puzzleError.textContent = '';
+      closeModal();
+      showOnly('screen-decoder');
+      const cwCipher = document.getElementById('cw-cipherIn');
+      if (cwCipher) cwCipher.value = 'Patqzk Xundmdk';
+      if (window.updateCipherWheel) window.updateCipherWheel();
+    } else {
+      puzzleError.textContent = 'Not quite! (Two weeks = 14 days)';
+    }
+  }
+  puzzleSubmit.addEventListener('click', checkPuzzle);
+  puzzleInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkPuzzle(); });
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  /* ========= Choices logic ========= */
+  document.querySelectorAll('.btn.choice').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const loc = btn.getAttribute('data-loc');
+      if (loc === correctLocation) {
+        showOnly('screen-final');
+        startPFConfetti();
+      } else {
+        wrong.classList.remove('hidden');
+        setTimeout(() => wrong.classList.add('hidden'), 1500);
+      }
+    });
+  });
+
+  /* ========= Cipher Wheel ========= */
+  (function initCipherWheel(){
+    const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const STEP_DEG = 360/26;
+    const CX = 160, CY = 160;
+
+    const outerLetters = document.getElementById('cw-outerLetters');
+    const innerLetters = document.getElementById('cw-innerLetters');
+    const outerTicks   = document.getElementById('cw-outerTicks');
+    const innerRing    = document.getElementById('cw-innerRing');
+
+    const innerSlider  = document.getElementById('cw-innerSlider');
+    const innerMinus   = document.getElementById('cw-innerMinus');
+    const innerPlus    = document.getElementById('cw-innerPlus');
+    const innerStepsEl = document.getElementById('cw-innerSteps');
+    const shiftValEl   = document.getElementById('cw-shiftVal');
+    const mapGrid      = document.getElementById('cw-mapGrid');
+    const cipherIn     = document.getElementById('cw-cipherIn');
+    const plainOut     = document.getElementById('cw-plainOut');
+    const btnExit      = document.getElementById('btn-exit-decoder');
+
+    let innerSteps = 0;
+
+    function placeLetters(group, radius, color, weight){
+      group.innerHTML = '';
+      for (let i=0;i<26;i++){
+        const angle = -90 + i*STEP_DEG;
+        const rad = angle * Math.PI/180;
+        const x = CX + radius*Math.cos(rad);
+        const y = CY + radius*Math.sin(rad);
+        const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('transform', `translate(${x},${y}) rotate(${angle+90})`);
+        const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+        t.textContent = A[i];
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('dominant-baseline','middle');
+        t.setAttribute('fill', color);
+        t.setAttribute('font-size', 16);
+        t.setAttribute('font-weight', weight);
+        g.appendChild(t);
+        group.appendChild(g);
+      }
+    }
+    function placeTicks(){
+      outerTicks.innerHTML = '';
+      for(let i=0;i<26;i++){
+        const angle = -90 + i*STEP_DEG;
+        const rad = angle*Math.PI/180;
+        const r1 = 138, r2 = 146;
+        const x1 = CX + r1*Math.cos(rad), y1 = CY + r1*Math.sin(rad);
+        const x2 = CX + r2*Math.cos(rad), y2 = CY + r2*Math.sin(rad);
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+        line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+        line.setAttribute('stroke','#94a3b8'); line.setAttribute('stroke-width', i%5===0?3:1.5);
+        outerTicks.appendChild(line);
+      }
+    }
+
+    function setInnerBySteps(steps){
+      innerSteps = ((steps%26)+26)%26;
+      const angle = innerSteps * STEP_DEG;
+      innerRing.style.transform    = `rotate(${angle}deg)`;
+      innerLetters.style.transform = `rotate(${angle}deg)`;
+      innerSlider.value = innerSteps;
+      innerStepsEl.textContent = innerSteps;
+      updateAll();
+    }
+
+    const effectiveShift = () => ((0 - innerSteps) % 26 + 26) % 26;
+
+    function renderMapping(shift){
+      const rows=[];
+      for(let i=0;i<26;i++){
+        const from = A[i];
+        const to = A[(i+shift)%26];
+        rows.push(`<div>${from} → <strong style="color:${i===0?'#2563eb':'#111'}">${to}</strong></div>`);
+      }
+      mapGrid.innerHTML = rows.join('');
+    }
+    function decodeWithShift(shift, text){
+      const upA='A'.charCodeAt(0), upZ='Z'.charCodeAt(0);
+      const loA='a'.charCodeAt(0), loZ='z'.charCodeAt(0);
+      const back = (26 - shift) % 26;
+      let out='';
+      for(const ch of text){
+        const c = ch.charCodeAt(0);
+        if(c>=upA && c<=upZ){ out += String.fromCharCode(upA + ((c-upA+back)%26)); }
+        else if(c>=loA && c<=loZ){ out += String.fromCharCode(loA + ((c-loA+back)%26)); }
+        else out += ch;
+      }
+      return out;
+    }
+
+    function normalized(str){ return (str||'').trim().toLowerCase().replace(/\s+/g,' '); }
+
+    function checkSolved(){
+      const wheelOk = innerSteps === 14;
+      const textOk  = normalized(plainOut.value) === 'doheny library';
+      btnExit.classList.toggle('disabled', !(wheelOk && textOk));
+    }
+
+    function updateAll(){
+      const s = effectiveShift();
+      shiftValEl.textContent = s;
+      renderMapping(s);
+      plainOut.value = decodeWithShift(s, cipherIn.value || '');
+      checkSolved();
+    }
+
+    // Events
+    innerSlider.addEventListener('input', e => setInnerBySteps(parseInt(e.target.value,10)));
+    innerMinus.addEventListener('click', () => setInnerBySteps(innerSteps - 1));
+    innerPlus.addEventListener('click',  () => setInnerBySteps(innerSteps + 1));
+    cipherIn.addEventListener('input', updateAll);
+    document.getElementById('btn-exit-decoder').addEventListener('click', ()=>{
+      if (document.getElementById('btn-exit-decoder').classList.contains('disabled')) return;
+      showOnly('screen-choices');   // -> choices screen
+    });
+
+    // Init
+    placeLetters(outerLetters, 122, '#e2e8f0', 700);
+    placeLetters(innerLetters, 82,  '#e2e8f0', 800);
+    placeTicks();
+    setInnerBySteps(0);
+    cipherIn.value = ''; // will be filled after puzzle
+    updateAll();
+
+    // Hook for narrative
+    window.updateCipherWheel = updateAll;
+  })();
+
+  /* ========= PF Confetti (final screen) ========= */
+  function startPFConfetti(){
+    const host = document.getElementById('pf-confetti');
+    if(!host) return;
+    host.innerHTML = '';
+    const colors = ['var(--pf-teal)','var(--pf-orange)','var(--pf-yellow)','var(--pf-blue)'];
+    const shapes = ['pf-circle','pf-diamond','']; // circle, diamond, square
+    for(let i=0;i<80;i++){
+      const d = document.createElement('div');
+      d.className = 'pf-piece ' + shapes[Math.floor(Math.random()*shapes.length)];
+      d.style.left = Math.random()*100 + '%';
+      d.style.top = (-10 - Math.random()*30) + 'px';
+      const size = 6 + Math.random()*10;
+      d.style.width = size + 'px';
+      d.style.height = size + 'px';
+      d.style.background = colors[Math.floor(Math.random()*colors.length)];
+      d.style.animationDuration = (2 + Math.random()*2.2) + 's';
+      d.style.animationDelay = (Math.random()*1.2) + 's';
+      d.style.opacity = (0.7 + Math.random()*0.3).toFixed(2);
+      host.appendChild(d);
+    }
+  }
+});
+</script>
+</body>
+</html>
