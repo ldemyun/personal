@@ -51,11 +51,11 @@ body{
 .hidden{display:none;}
 .img-round{
   width: min(500px, 100%);
-  height: auto;              /* keep aspect ratio */
-  aspect-ratio: 500 / 192;   /* optional: preserves box ratio while loading */
+  height: auto;
+  aspect-ratio: 500 / 192;
   display: block;
   margin: 0 auto 12px;
-  object-fit: contain;       /* harmless here; can be removed if you like */
+  object-fit: contain;
 }
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
 /* Step transitions */
@@ -274,17 +274,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnBeginDecode = document.getElementById('btn-begin-decode');
   const wrong = document.getElementById('wrong');
 
-  // Typewriter (generic)
+  // Typewriter (generic) — caret fix (remove per-span on finish)
   async function typeSpansSequentially(container, spans, speed){
-    const typeSpan = (span) => new Promise((resolve) => {
-      const full = span.getAttribute('data-full') || '';
-      let i = 0;
-      (function tick(){
-        span.textContent = full.slice(0, i++);
-        if(i <= full.length) setTimeout(tick, speed); else resolve();
-      })();
-    });
-    for (const s of spans) await typeSpan(s);
+    function typeSpan(span, speed){
+      return new Promise((resolve) => {
+        const full = span.getAttribute('data-full') || '';
+        let i = 0;
+        (function tick(){
+          span.textContent = full.slice(0, i++);
+          if(i <= full.length){
+            setTimeout(tick, speed);
+          }else{
+            span.classList.remove('typed'); // drop this span's caret immediately
+            resolve();
+          }
+        })();
+      });
+    }
+    for (const s of spans) {
+      await typeSpan(s, speed);
+    }
   }
 
   async function typeLine(text, parent, { speed = TYPE_SPEED, pauseEnd = TYPE_PAUSE, highlightPhrase = 'THE BRUIN-INATOR', openQuote = false } = {}) {
@@ -304,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     parent.appendChild(p);
     await typeSpansSequentially(p, p.querySelectorAll('.typed'), speed);
-    p.querySelectorAll('.typed').forEach(s=>s.classList.remove('typed'));
+    // (no bulk removal here anymore)
     await new Promise(r=>setTimeout(r, pauseEnd));
   }
 
@@ -328,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bubble.appendChild(box);
     const cipherSpan = box.querySelector('.typed');
     await typeSpansSequentially(box, [cipherSpan], CIPHER_SPEED);
-    cipherSpan.classList.remove('typed');
+    // no extra class removal needed
 
     await typeLine('Good luck stopping me, Perry the Platypus!', bubble, { speed: TYPE_SPEED, pauseEnd: 300 });
     const sig = document.createElement('p');
