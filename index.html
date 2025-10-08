@@ -49,7 +49,7 @@ body{
 @keyframes caret{50%{opacity:0}}
 .highlight{color:#2563eb;font-weight:700;}
 .hidden{display:none;}
-.img-round{width:192px;height:192px;object-fit:contain;display:block;margin:0 auto 12px;}
+.img-round{width:500px;height:192px;object-fit:contain;display:block;margin:0 auto 12px;}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
 /* Step transitions */
 .step{opacity:0;transform:translateY(10px);transition:opacity .35s ease, transform .35s ease;}
@@ -102,7 +102,7 @@ body{
   <!-- START -->
   <div id="screen-start" class="card orange center step show">
     <div class="subtitle-bubble"><span id="start-typed" class="typed" data-full="Agent P, we've intercepted a transmission from Dr. Doofenshmirtz. He's up to something at USC, and we need YOUR help!"></span></div>
-    <img class="img-round" src="perryboss.jpeg" alt="Major Monogram" />
+    <img class="img-round" src="boss.png" alt="Major Monogram" />
     <button id="btn-start" class="btn">ACCEPT MISSION</button>
   </div>
 
@@ -198,9 +198,9 @@ body{
     <div class="panel" style="margin-bottom:12px;">
       <p class="mono" style="font-weight:800;font-size:18px;margin:0 0 10px;">Select the Bruin-inator's location:</p>
       <div>
-        <button class="btn choice" data-loc="Doheny Library">Doheny Library</button>
         <button class="btn choice" data-loc="Tommy Trojan">Tommy Trojan</button>
         <button class="btn choice" data-loc="Bovard Auditorium">Bovard Auditorium</button>
+        <button class="btn choice" data-loc="Doheny Library">Doheny Library</button>
         <button class="btn choice" data-loc="Leavey Library">Leavey Library</button>
       </div>
       <div id="wrong" class="error hidden">❌ Not quite! Keep decoding, Agent P!</div>
