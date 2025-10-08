@@ -91,11 +91,30 @@ body{
   opacity:0;transition:opacity .3s ease;
 }
 .modal-backdrop.show{display:flex;opacity:1;}
-.modal{background:#fff;border-radius:18px;border:3px solid #0ea5a4;box-shadow:0 20px 40px rgba(0,0,0,.3);width:min(560px,92vw);padding:20px;}
+.modal{
+  background:#fff;border-radius:18px;border:3px solid #0ea5a4;box-shadow:0 20px 40px rgba(0,0,0,.3);
+  width:min(560px,92vw);padding:20px;
+  /* Responsive modal fix: prevent clipping on small screens & when keyboard shows */
+  max-height:90vh;overflow:auto;
+}
 .modal h3{margin:0 0 10px;font-size:22px;color:#0f766e}
 .modal .hint{font-size:14px;color:#475569;margin:6px 0 14px}
-.inputline{display:flex;gap:8px;align-items:center;margin-top:8px}
-.inputline input{flex:1;border:2px solid #94d0c9;border-radius:12px;padding:10px 12px;font-size:18px}
+
+/* Responsive modal fix: input & submit layout */
+.inputline{
+  display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch;margin-top:8px;
+}
+.inputline input{
+  flex:1;border:2px solid #94d0c9;border-radius:12px;padding:10px 12px;font-size:18px;min-width:0;
+}
+.inputline .btn{white-space:nowrap}
+
+/* Stack on very small screens so the button stays inside */
+@media (max-width: 480px){
+  .inputline{grid-template-columns:1fr;}
+  .inputline .btn{width:100%}
+}
+
 .inline-error{color:#b91c1c;font-weight:800;margin-top:8px;min-height:1.2em}
 
 /* ===== Final screen ===== */
