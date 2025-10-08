@@ -43,10 +43,19 @@ body{
 .panel{background:#f0fdfa;border:2px solid #14b8a6;padding:14px;border-radius:12px;}
 .error{color:#dc2626;font-weight:800;margin-top:10px;animation:pulse 1s infinite;}
 @keyframes pulse{50%{opacity:.5}}
-/* Typewriter */
-.typed{position:relative;display:inline-block;}
-.typed::after{content:"";position:absolute;right:-2px;top:0;height:1.2em;width:2px;background:#1f2937;animation:caret 0.9s steps(1,end) infinite;}
-@keyframes caret{50%{opacity:0}}
+
+/* Typewriter (single-caret system) */
+.typed{ position:relative; display:inline-block; } /* spans that get typed */
+.typing::after{
+  content:"";
+  position:absolute;
+  right:-2px; top:0;
+  height:1.2em; width:2px;
+  background:#1f2937;
+  animation:caret 0.9s steps(1,end) infinite;
+}
+@keyframes caret{ 50%{ opacity:0 } }
+
 .highlight{color:#2563eb;font-weight:700;}
 .hidden{display:none;}
 .img-round{
@@ -257,6 +266,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /* ========= Single-caret manager ========= */
+  function moveCaret(toSpan){
+    document.querySelectorAll('.typing').forEach(el => el.classList.remove('typing'));
+    if (toSpan) toSpan.classList.add('typing');
+  }
+
   /* ========= Narrative ========= */
   const messageLines = [
     'Ah, Perry the Platypus! By the time you find this message, it will be too late! Behold, my latest invention: THE BRUIN-INATOR!',
@@ -274,26 +289,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnBeginDecode = document.getElementById('btn-begin-decode');
   const wrong = document.getElementById('wrong');
 
-  // Typewriter (generic) — caret fix (remove per-span on finish)
+  // Typewriter (generic) — caret follows active span
   async function typeSpansSequentially(container, spans, speed){
-    function typeSpan(span, speed){
-      return new Promise((resolve) => {
-        const full = span.getAttribute('data-full') || '';
-        let i = 0;
-        (function tick(){
-          span.textContent = full.slice(0, i++);
-          if(i <= full.length){
-            setTimeout(tick, speed);
-          }else{
-            span.classList.remove('typed'); // drop this span's caret immediately
-            resolve();
-          }
-        })();
-      });
-    }
+    const typeSpan = (span) => new Promise((resolve) => {
+      const full = span.getAttribute('data-full') || '';
+      let i = 0;
+      moveCaret(span); // caret on this span while it types
+      (function tick(){
+        span.textContent = full.slice(0, i++);
+        if(i <= full.length){
+          setTimeout(tick, speed);
+        }else{
+          resolve();
+        }
+      })();
+    });
     for (const s of spans) {
       await typeSpan(s, speed);
     }
+    // leave caret at end of last span until next line begins
+    moveCaret(spans[spans.length - 1] || null);
   }
 
   async function typeLine(text, parent, { speed = TYPE_SPEED, pauseEnd = TYPE_PAUSE, highlightPhrase = 'THE BRUIN-INATOR', openQuote = false } = {}) {
@@ -313,14 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     parent.appendChild(p);
     await typeSpansSequentially(p, p.querySelectorAll('.typed'), speed);
-    // (no bulk removal here anymore)
     await new Promise(r=>setTimeout(r, pauseEnd));
   }
 
-  // Start screen subtitle typewriter
+  // Start screen subtitle typewriter (caret assigned)
   (function animateStartSubtitle(){
     const startSpan = document.getElementById('start-typed');
     if (startSpan){
+      moveCaret(startSpan);
       typeSpansSequentially(startSpan.parentElement, [startSpan], TYPE_SPEED);
     }
   })();
@@ -337,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bubble.appendChild(box);
     const cipherSpan = box.querySelector('.typed');
     await typeSpansSequentially(box, [cipherSpan], CIPHER_SPEED);
-    // no extra class removal needed
 
     await typeLine('Good luck stopping me, Perry the Platypus!', bubble, { speed: TYPE_SPEED, pauseEnd: 300 });
     const sig = document.createElement('p');
