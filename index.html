@@ -49,7 +49,14 @@ body{
 @keyframes caret{50%{opacity:0}}
 .highlight{color:#2563eb;font-weight:700;}
 .hidden{display:none;}
-.img-round{width:500px;height:192px;object-fit:contain;display:block;margin:0 auto 12px;}
+.img-round{
+  width: min(500px, 100%);
+  height: auto;              /* keep aspect ratio */
+  aspect-ratio: 500 / 192;   /* optional: preserves box ratio while loading */
+  display: block;
+  margin: 0 auto 12px;
+  object-fit: contain;       /* harmless here; can be removed if you like */
+}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
 /* Step transitions */
 .step{opacity:0;transform:translateY(10px);transition:opacity .35s ease, transform .35s ease;}
